@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import "./Practice.css"; // 🔥 reuse same UI
 
 function Resume() {
 
@@ -13,6 +14,13 @@ function Resume() {
   const [answer, setAnswer] = useState("");
 
   const [score, setScore] = useState(0);
+
+  const chatEndRef = useRef(null);
+
+  // 🔥 Auto scroll
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chat]);
 
   // 🚀 Upload Resume
   const uploadResume = async () => {
@@ -36,7 +44,6 @@ function Resume() {
 
       setQuestions(qList);
 
-      // start interview immediately
       setChat([{ sender: "ai", text: qList[0] }]);
 
     } catch (err) {
@@ -74,7 +81,6 @@ function Resume() {
 
     setAnswer("");
 
-    // next question
     const next = currentQ + 1;
 
     if (next < questions.length) {
@@ -85,7 +91,7 @@ function Resume() {
           ...prev,
           { sender: "ai", text: questions[next] }
         ]);
-      }, 1000);
+      }, 800);
 
     } else {
       setChat(prev => [
@@ -99,80 +105,81 @@ function Resume() {
   };
 
   return (
-    <div style={styles.wrapper}>
+    <div className="practice-wrapper">
+      <div className="practice-box">
 
-      <h2 style={styles.title}>Resume AI Interview</h2>
+        <h1 className="practice-title">Resume AI Interview</h1>
 
-      {/* UPLOAD SECTION */}
-      {questions.length === 0 && (
-        <div style={styles.uploadBox}>
+        <p className="practice-desc">
+          Upload your resume and experience an AI-driven mock interview tailored to your profile.
+        </p>
 
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={(e) => setFile(e.target.files[0])}
-          />
+        {/* UPLOAD */}
+        {questions.length === 0 && (
+          <div>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setFile(e.target.files[0])}
+            />
 
-          <br /><br />
+            <br /><br />
 
-          <button style={styles.primaryBtn} onClick={uploadResume}>
-            {loading ? "Processing..." : "Upload Resume"}
-          </button>
+            <button className="btn primary" onClick={uploadResume}>
+              {loading ? "Processing..." : "Upload Resume"}
+            </button>
+          </div>
+        )}
 
-        </div>
-      )}
+        {/* CHAT INTERVIEW */}
+        {questions.length > 0 && (
+          <>
 
-      {/* CHAT INTERVIEW */}
-      {questions.length > 0 && (
-        <div style={styles.chatContainer}>
+            {/* CHAT */}
+            <div className="chat-box">
+              {chat.map((msg, i) => (
+                <div key={i} className={`msg ${msg.sender}`}>
+                  <div className="bubble">{msg.text}</div>
+                </div>
+              ))}
 
-          {/* CHAT */}
-          <div style={styles.chatBox}>
-            {chat.map((msg, i) => (
-              <div
-                key={i}
-                style={{
-                  textAlign: msg.sender === "ai" ? "left" : "right",
-                  margin: "10px"
-                }}
-              >
-                <span style={{
-                  background: msg.sender === "ai"
-                    ? "#1e293b"
-                    : "linear-gradient(135deg,#f59e0b,#f97316)",
-                  color: "#fff",
-                  padding: "10px",
-                  borderRadius: "10px",
-                  display: "inline-block",
-                  maxWidth: "70%"
-                }}>
-                  {msg.text}
+              <div ref={chatEndRef}></div>
+            </div>
+
+            {/* ANSWER */}
+            <textarea
+              className="answer-box"
+              placeholder="Write your answer..."
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+            />
+
+            <button className="btn secondary" onClick={submitAnswer}>
+              Submit Answer
+            </button>
+
+            {/* SCORE */}
+            <div className={`result-box ${
+              score <= (questions.length * 4) ? "low"
+              : score <= (questions.length * 7) ? "medium"
+              : "high"
+            }`}>
+              <div className="score-header">
+                <h3>Progress</h3>
+                <span className="score-value">
+                  {currentQ + 1}/{questions.length}
                 </span>
               </div>
-            ))}
-          </div>
 
-          {/* INPUT */}
-          <textarea
-            style={styles.textarea}
-            placeholder="Write your answer..."
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-          />
+              <p className="score-feedback">
+                Total Score: {score}
+              </p>
+            </div>
 
-          <button style={styles.secondaryBtn} onClick={submitAnswer}>
-            Submit Answer
-          </button>
+          </>
+        )}
 
-          {/* SCORE */}
-          <div style={styles.scoreBox}>
-            <p>Question: {currentQ + 1} / {questions.length}</p>
-            <p>Total Score: {score}</p>
-          </div>
-
-        </div>
-      )}
-
+      </div>
     </div>
   );
 }
